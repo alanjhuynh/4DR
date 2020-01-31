@@ -51,12 +51,8 @@ def correspondPoint(event, x, y, flags, param):
             otherIndex = 1
         color = (randrange(256), randrange(256) , randrange(256))
 
+        window = np.zeros(windowSize*windowSize)
         n = 0
-        print(" ( " + str(x) + ", " + str(y) + ")")
-        print(windowStart)
-        print(windowEnd)
-        print(windowSize)
-        window = np.zeros(windowSize * windowSize)
         for i in range(windowStart, windowEnd + 1, 1): #Outside Loop is Y Value
             for j in range(windowStart, windowEnd + 1, 1): #InsideLoop is X Value
                 #print(" ( " + str(x + j) + ", " + str(y + i) + ")")
@@ -77,15 +73,17 @@ def correspondPoint(event, x, y, flags, param):
         bestN = -1
         xValue = np.zeros(1)
         yValue = np.zeros(1)
+        windowPrime = np.zeros(windowSize * windowSize)
+        
         for n in range(windowEnd, 635 + windowStart, 1):
-            windowPrime = np.zeros(windowSize * windowSize)
+            
             k = 0
             for i in range(windowStart, windowEnd + 1, 1): #Outside Loop is Y Value
                 for j in range(windowStart, windowEnd + 1, 1): #InsideLoop is X Value
                     windowPrime[k] = param[1][y + i][n + j]
                     #print(" ( " + str(n + j) + ", " + str(y + i) + ")")
                     k += 1
-                    
+            mean = np.mean(windowPrime)        
             k = 0       
             for i in range(windowStart, windowEnd + 1, 1): #Outside Loop is Y Value
                 for j in range(windowStart, windowEnd + 1, 1): #InsideLoop is X Value
@@ -114,6 +112,11 @@ def correspondPoint(event, x, y, flags, param):
             cv2.circle(param[1], (bestN,y), 4, color)
                 
     
+imagePoints1 = np.array([[-1.0, -1.0]])
+print(type(imagePoints1[0]))
+print(imagePoints1[0])
+imagePoints1 = np.append(imagePoints1, [[1,1]], axis = 0)
+print(imagePoints1)
 
 criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
 
@@ -133,7 +136,7 @@ print(number_files)
 start = 0
 frameNum = 0
 
-
+GREEN = (124,252,0)
 
 while(True):
 
@@ -158,6 +161,19 @@ while(True):
         gray2 = cv2.dilate(gray2,None)
         frame1[gray1>0.01*gray1.max()]=[0,0,255]
         frame2[gray2>0.01*gray2.max()]=[0,0,255]
+        
+        h = gray1.shape[0]
+        w = gray1.shape[1]
+
+        cv2.line(frame1, (0,int(h/2)), (w,int(h/2)), GREEN)
+        cv2.line(frame1, (0,int(h/2) + 1), (w,int(h/2) + 1), GREEN)
+        cv2.line(frame1, (int(w/2),0), (int(w/2),h), GREEN)
+        cv2.line(frame1, (int(w/2) + 1,0), (int(w/2) + 1,h), GREEN)
+        cv2.line(frame2, (0,int(h/2)), (w,int(h/2)), GREEN)
+        cv2.line(frame2, (0,int(h/2) + 1), (w,int(h/2) + 1), GREEN)
+        cv2.line(frame2, (int(w/2),0), (int(w/2),h), GREEN)
+        cv2.line(frame2, (int(w/2) + 1,0), (int(w/2) + 1,h), GREEN)
+        
 
         cv2.imshow('Frame1',frame1)
         cv2.imshow('Frame2',frame2)
@@ -171,8 +187,6 @@ while(True):
             title = "images/" + str(number_files) + ".jpg"
             cv2.imwrite(title, saveFrame2)
         if cv2.waitKey(1) & 0xFF == ord('w'):
-            cap1.release()
-            cap2.release()
             break
 
         frameNum += 1
@@ -190,12 +204,45 @@ while(True):
         continue
     else:
         break
+    
 
+
+## START
+print("Create Test Pictures")
+while(True):
+ 
+        ret1, frame1 = cap1.read()
+        ret2, frame2 = cap2.read()
+        saveFrame1 = frame1.copy()
+        saveFrame2 = frame2.copy()       
+
+        cv2.imshow('Frame1',frame1)
+        cv2.imshow('Frame2',frame2)
+
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            print("Capturing Test Image")
+            name = input("Input Name:")
+            number_files += 1
+            title = "testImage/" + str(name) + "1.jpg"
+            cv2.imwrite(title, saveFrame1)
+            number_files += 1
+            title = "testImage/" + str(name) + "2.jpg"
+            cv2.imwrite(title, saveFrame2)
+        if cv2.waitKey(1) & 0xFF == ord('w'):
+            cap1.release()
+            cap2.release()
+            break
+## END
+cap1.release()
+cap2.release()
+
+
+index = 1
 for i in range(1, number_files, 2):
-    index = i
-    imgname1 = str(index)+ ".jpg"
-    index += 1
-    imgname2 = str(index) + ".jpg"
+    
+    
+    imgname1 = str(i)+ ".jpg"
+    imgname2 = str(i + 1) + ".jpg"
 
     if(os.path.isfile("images/" + imgname1) == False):
         continue
@@ -208,7 +255,15 @@ for i in range(1, number_files, 2):
     ret1, temp = cv2.findChessboardCorners(gray1, (8,6), None)
     ret2, temp = cv2.findChessboardCorners(gray2, (8,6), None)
 
+    
+
     if (ret1 and ret2) == True:
+        title = "images/" + str(index) + ".jpg"
+        cv2.imwrite(title, img1)
+        index += 1
+        title = "images/" + str(index) + ".jpg"
+        cv2.imwrite(title, img2)
+        index += 1
         continue
     else:
         try: 
@@ -265,8 +320,7 @@ print(dist1)
 print(mtx2)
 print(dist2)
 
-
-
+    
 ret, mtx1, dist1, mtx2, dist2, Rmtx, Tmtx, Emtx, Fmtx = cv2.stereoCalibrate(objpoints, imgpoints1, imgpoints2, mtx1, dist1, mtx2, dist2, gray2.shape[::-1], 256, criteria)
 
 
@@ -275,6 +329,19 @@ h = gray1.shape[0]
 w = gray1.shape[1]
 print(mtx1.shape)
 print(newmtx1.shape)
+
+## START
+while(True):
+    name = input("Enter image name you want to test:")
+    if(os.path.isfile("testImage/" + name + "1.jpg") == False):
+        print("Doesn't Exist")
+        continue
+    
+    frame1 = cv2.imread("testImage/" + name + "1.jpg")
+    frame2 = cv2.imread("testImage/" + name + "2.jpg")
+    break
+    
+##END
 
 #Before Rectification
 undistort1 = cv2.undistort(frame1,mtx1,dist1, None, newmtx1)
@@ -312,6 +379,8 @@ newFrame2 = cv2.remap(frame2, map2_1, map2_2, cv2.INTER_LINEAR)
 
 testFrame1 = newFrame1.copy()
 testFrame2 = newFrame2.copy()
+cleanFrame1 = newFrame1.copy()
+cleanFrame2 = newFrame2.copy()
 
 x,y,w,h = roinew1
 cv2.line(newFrame1, (x, y),(x+w, y),(0,255,0), 2)
@@ -370,6 +439,93 @@ while(True):
         cv2.destroyAllWindows()
         break
         
+
+windowStart = -10
+windowEnd = 10
+windowSize = 21
+window = np.zeros(windowSize*windowSize)
+windowPrime = np.zeros(windowSize*windowSize)
+threshold = .5
+imagePoints1 = np.array([[-1.0, -1.0]])
+imagePoints2 = np.array([[-1.0, -1.0]])
+
+gray1 = cv2.cvtColor(cleanFrame1, cv2.COLOR_BGR2GRAY)
+gray2 = cv2.cvtColor(cleanFrame2, cv2.COLOR_BGR2GRAY)
+N = 0
+
+for y in range(windowEnd, h + windowStart, 1):
+    for x in range(windowEnd, w + windowStart, 1):
+        print(x,y)
+        
+        n = 0
+        for i in range(windowStart, windowEnd + 1, 1):
+            for j in range(windowStart, windowEnd + 1, 1):
+                window[n] = gray1[y+i][x+j]
+                n += 1
+        mean = np.mean(window)
+        n = 0
+        for i in range(windowStart, windowEnd + 1, 1):
+            for j in range(windowStart, windowEnd + 1, 1):
+                window[n] = window[n] - mean
+                n += 1
+        magnitude = np.linalg.norm(window)
+
+        maxValue = 0
+        bestN = -1
+        for n in range (windowEnd, w + windowStart, 1):
+            k = 0
+            for i in range(windowStart, windowEnd + 1, 1):
+                for j in range(windowStart, windowEnd + 1, 1):
+                    windowPrime[k] = gray2[y+i][n+j]
+                    k += 1
+            mean = np.mean(windowPrime)  
+            k = 0
+            for i in range(windowStart, windowEnd + 1, 1):
+                for j in range(windowStart, windowEnd + 1, 1):
+                    windowPrime[k] = windowPrime[k] - mean
+                    k += 1
+            magnitudePrime = np.linalg.norm(windowPrime)
+
+            if(magnitudePrime * magnitude == 0):
+                print(x, y, magnitude, magnitudePrime)
+                continue
+
+            testValue = np.dot(window, windowPrime)/(magnitude * magnitudePrime)
+            if(maxValue<testValue):
+                bestN = n
+                maxValue = testValue
+
+        if(maxValue > threshold):
+            print("success")
+            if(N == 0):
+                #MAKE SURE THIS IS RIGHT (X is 0 and Y is 1)
+                imagePoints1[N][0] = float(x)
+                imagePoints1[N][1] = float(y)
+                imagePoints2[N][0] = float(bestN)
+                imagePoints2[N][1] = float(y)
+                N += 1
+            else:
+                np.append(imagePoints1, [[float(x),float(y)]], axis = 0)
+                np.append(imagePoints2, [[float(bestN),float(y)]], axis = 0)
+
+raw3dPoints = triangulatePoints(Pmtx1, Pmtx2, imagePoints1, imagePoints2)
+
+print(raw3dPoints)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
