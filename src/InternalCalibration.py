@@ -110,7 +110,8 @@ def correspondPoint(event, x, y, flags, param):
             cv2.circle(param[2], (x,y), 4, color)
             cv2.circle(param[3], (bestN,y), 4, color)
             cv2.circle(param[1], (bestN,y), 4, color)
-                
+
+          
     
 imagePoints1 = np.array([[-1.0, -1.0]])
 print(type(imagePoints1[0]))
@@ -440,23 +441,59 @@ while(True):
         break
         
 
-windowStart = -10
-windowEnd = 10
-windowSize = 21
+windowStart = -5
+windowEnd = 5
+windowSize = 11
 window = np.zeros(windowSize*windowSize)
 windowPrime = np.zeros(windowSize*windowSize)
 threshold = .5
-imagePoints1 = np.array([[-1.0, -1.0]])
-imagePoints2 = np.array([[-1.0, -1.0]])
+imagePoints1 = np.array([[-1.0], [-1.0]])
+imagePoints2 = np.array([[-1.0], [-1.0]])
 
 gray1 = cv2.cvtColor(cleanFrame1, cv2.COLOR_BGR2GRAY)
 gray2 = cv2.cvtColor(cleanFrame2, cv2.COLOR_BGR2GRAY)
 N = 0
 
-for y in range(windowEnd, h + windowStart, 1):
-    for x in range(windowEnd, w + windowStart, 1):
-        print(x,y)
+#CORRESPONDENCE
+while(True):
+    cropXstart = int(input("New start X: "))
+    cropXend = int(input("New end X: "))
+    cropYstart = int(input("New start Y: "))
+    cropYend = int(input("New end Y: "))
+    if(cropXstart < windowEnd or cropXend > h + windowStart - 1):
+        print("cropX won't work")
+        continue
+    if(cropYstart < windowEnd or cropYend > w + windowStart - 1):
+        print("cropY won't work")
+        continue
+
+    break;
+
+
+magPrimeArray = np.zeros((h - (2*windowEnd),w - (2*windowEnd)))
+winPrimeArray = np.zeros((h - (2*windowEnd),w - (2*windowEnd), windowSize*windowSize))
+
+
+for y in range(cropYstart, cropYend + windowStart, 1):
+    for n in range (windowEnd, w + windowStart, 1):
+        k = 0
+        for i in range(windowStart, windowEnd + 1, 1):
+            for j in range(windowStart, windowEnd + 1, 1):
+                windowPrime[k] = gray2[y+i][n+j]
+                k += 1
+        mean = np.mean(windowPrime)  
+        k = 0
+        for i in range(windowStart, windowEnd + 1, 1):
+            for j in range(windowStart, windowEnd + 1, 1):
+                windowPrime[k] = windowPrime[k] - mean
+                k += 1
+        magnitudePrime = np.linalg.norm(windowPrime)
+        magPrimeArray[y - windowEnd][n - windowEnd] = magnitudePrime
+        winPrimeArray[y  - windowEnd][n - windowEnd] = windowPrime.copy()
         
+for y in range(cropYstart, cropYend + windowStart, 1):
+    for x in range(cropXstart, cropXend + windowStart, 1):
+
         n = 0
         for i in range(windowStart, windowEnd + 1, 1):
             for j in range(windowStart, windowEnd + 1, 1):
@@ -472,43 +509,36 @@ for y in range(windowEnd, h + windowStart, 1):
 
         maxValue = 0
         bestN = -1
+        
         for n in range (windowEnd, w + windowStart, 1):
-            k = 0
-            for i in range(windowStart, windowEnd + 1, 1):
-                for j in range(windowStart, windowEnd + 1, 1):
-                    windowPrime[k] = gray2[y+i][n+j]
-                    k += 1
-            mean = np.mean(windowPrime)  
-            k = 0
-            for i in range(windowStart, windowEnd + 1, 1):
-                for j in range(windowStart, windowEnd + 1, 1):
-                    windowPrime[k] = windowPrime[k] - mean
-                    k += 1
-            magnitudePrime = np.linalg.norm(windowPrime)
-
-            if(magnitudePrime * magnitude == 0):
-                print(x, y, magnitude, magnitudePrime)
+            
+            data = magPrimeArray[y - windowEnd][n - windowEnd] * magnitude
+            if(data == 0):
                 continue
 
-            testValue = np.dot(window, windowPrime)/(magnitude * magnitudePrime)
+            testValue = np.dot(window, winPrimeArray[y - windowEnd][n - windowEnd])/(data)
             if(maxValue<testValue):
                 bestN = n
                 maxValue = testValue
 
         if(maxValue > threshold):
-            print("success")
             if(N == 0):
                 #MAKE SURE THIS IS RIGHT (X is 0 and Y is 1)
-                imagePoints1[N][0] = float(x)
-                imagePoints1[N][1] = float(y)
-                imagePoints2[N][0] = float(bestN)
-                imagePoints2[N][1] = float(y)
+                imagePoints1[0][N] = float(x)
+                imagePoints1[1][N] = float(y)
+                imagePoints2[0][N] = float(bestN)
+                imagePoints2[1][N] = float(y)
                 N += 1
             else:
-                np.append(imagePoints1, [[float(x),float(y)]], axis = 0)
-                np.append(imagePoints2, [[float(bestN),float(y)]], axis = 0)
+                imagePoints1 = np.append(imagePoints1, [[float(x),float(y)]], axis = 1)
+                imagePoints2 = np.append(imagePoints2, [[float(bestN),float(y)]], axis = 1)
 
-raw3dPoints = triangulatePoints(Pmtx1, Pmtx2, imagePoints1, imagePoints2)
+print(imagePoints1)
+print(imagePoints2)
+print(np.size(imagePoints1, 0))
+print(np.size(imagePoints1, 1))
+
+raw3dPoints = cv2.triangulatePoints(Pmtx1, Pmtx2, imagePoints1, imagePoints2)
 
 print(raw3dPoints)
 
