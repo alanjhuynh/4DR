@@ -530,18 +530,40 @@ for y in range(cropYstart, cropYend + windowStart, 1):
                 imagePoints2[1][N] = float(y)
                 N += 1
             else:
-                imagePoints1 = np.append(imagePoints1, [[float(x),float(y)]], axis = 1)
-                imagePoints2 = np.append(imagePoints2, [[float(bestN),float(y)]], axis = 1)
+                imagePoints1 = np.append(imagePoints1, np.array([[float(x)], [float(y)]]), axis = 1)
+                imagePoints2 = np.append(imagePoints2, np.array([[float(bestN)], [float(y)]]), axis = 1)
+                N += 1
 
 print(imagePoints1)
 print(imagePoints2)
 print(np.size(imagePoints1, 0))
 print(np.size(imagePoints1, 1))
+print(N)
 
-raw3dPoints = cv2.triangulatePoints(Pmtx1, Pmtx2, imagePoints1, imagePoints2)
+raw3dpoints = cv2.triangulatePoints(Pmtx1, Pmtx2, imagePoints1, imagePoints2)
 
-print(raw3dPoints)
+print(raw3dpoints)
 
+f = open("test2.ply", "w")
+f.write("ply \n")
+f.write("format ascii 1.0\n")
+f.write("element vertex " + str(np.size(raw3dpoints,1))+"\n")
+f.write("property float x \n")
+f.write("property float y \n")
+f.write("property float z \n")
+f.write("property uchar red \n")
+f.write("property uchar green \n")
+f.write("property uchar blue \n")
+f.write("end_header \n")
+for i in range(0, np.size(raw3dpoints,1), 1):
+    x = float(raw3dpoints[0][i]/raw3dpoints[3][i])
+    y = float(raw3dpoints[1][i]/raw3dpoints[3][i])
+    z = float(raw3dpoints[2][i]/raw3dpoints[3][i])
+    red = cleanFrame1[int(imagePoints1[1][i])][int(imagePoints1[0][i])][2]
+    green = cleanFrame1[int(imagePoints1[1][i])][int(imagePoints1[0][i])][1]
+    blue = cleanFrame1[int(imagePoints1[1][i])][int(imagePoints1[0][i])][0]
+    f.write(str(x) + " " + str(y)+ " "  + str(z) + " " + str(red) + " " + str(green) + " " + str(blue) + "\n")
+f.close()
 
 
 
