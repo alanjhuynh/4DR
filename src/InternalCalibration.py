@@ -460,22 +460,22 @@ while(True):
     cropXend = int(input("New end X: "))
     cropYstart = int(input("New start Y: "))
     cropYend = int(input("New end Y: "))
-    if(cropXstart < windowEnd or cropXend > h + windowStart - 1):
+    if(cropXstart < windowEnd or cropXend > w + windowStart - 1):
         print("cropX won't work")
         continue
-    if(cropYstart < windowEnd or cropYend > w + windowStart - 1):
+    if(cropYstart < windowEnd or cropYend > h + windowStart - 1):
         print("cropY won't work")
         continue
 
     break;
 
 
-magPrimeArray = np.zeros((h - (2*windowEnd),w - (2*windowEnd)))
-winPrimeArray = np.zeros((h - (2*windowEnd),w - (2*windowEnd), windowSize*windowSize))
+magPrimeArray = np.zeros((h - (2*windowEnd),w - (2*windowEnd) - cropXstart))
+winPrimeArray = np.zeros((h - (2*windowEnd),w - (2*windowEnd) - cropXstart, windowSize*windowSize))
 
 
 for y in range(cropYstart, cropYend + windowStart, 1):
-    for n in range (windowEnd, w + windowStart, 1):
+    for n in range (windowEnd, w + windowStart - cropXstart, 1):
         k = 0
         for i in range(windowStart, windowEnd + 1, 1):
             for j in range(windowStart, windowEnd + 1, 1):
@@ -510,7 +510,7 @@ for y in range(cropYstart, cropYend + windowStart, 1):
         maxValue = 0
         bestN = -1
         
-        for n in range (windowEnd, w + windowStart, 1):
+        for n in range (windowEnd, w + windowStart - cropXstart, 1):
             
             data = magPrimeArray[y - windowEnd][n - windowEnd] * magnitude
             if(data == 0):
@@ -540,6 +540,13 @@ print(np.size(imagePoints1, 0))
 print(np.size(imagePoints1, 1))
 print(N)
 
+imagePoints1 = np.reshape(np.ravel(imagePoints1, order='F'), (1, np.size(imagePoints1, 1), 2), order='C')
+imagePoints2 = np.reshape(np.ravel(imagePoints2, order='F'), (1, np.size(imagePoints2, 1), 2), order='C')
+imagePoints1, imagePoints2 = cv2.correctMatches(Fmtx, imagePoints1, imagePoints2)
+imagePoints1 = np.reshape(np.ravel(imagePoints1, order='F'), (2, np.size(imagePoints1, 1)), order='C')
+imagePoints2 = np.reshape(np.ravel(imagePoints2, order='F'), (2, np.size(imagePoints2, 1)), order='C')
+
+
 raw3dpoints = cv2.triangulatePoints(Pmtx1, Pmtx2, imagePoints1, imagePoints2)
 
 print(raw3dpoints)
@@ -568,7 +575,8 @@ f.close()
 
 
 
-
+## 100 to 600
+## 100 to 420
 
 
 
